@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install *)",
+      "Bash(mkdir *)",
+      "Bash(npm run *)",
+      "Bash(timeout *)",
+      "Bash(dir *)",
+      "Bash(npx *)",
+      "Bash(findstr *)",
+      "Bash(taskkill *)",
+      "Bash(git rm *)"
+    ]
+  },
+  "$version": 3
+}
