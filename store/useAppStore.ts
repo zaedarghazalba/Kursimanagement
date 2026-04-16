@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Student, Room, RoomAssignment } from '@/lib/types';
+import { Student, Room, RoomAssignment, SeatAssignment } from '@/lib/types';
 
 interface AppState {
   // Students
@@ -20,6 +20,11 @@ interface AppState {
   roomAssignments: RoomAssignment[];
   setRoomAssignments: (assignments: RoomAssignment[]) => void;
   updateSeatAssignment: (roomId: string, seatId: string, student: Student | null) => void;
+  updateSeatType: (roomId: string, seatId: string, type: 'seat' | 'pengawas' | 'pintu' | 'empty') => void;
+  addEmptyRowTop: (roomId: string) => void;
+  addEmptyRowBottom: (roomId: string) => void;
+  addEmptyColumnLeft: (roomId: string) => void;
+  addEmptyColumnRight: (roomId: string) => void;
   clearRoomAssignments: () => void;
 
   // UI State
@@ -75,11 +80,112 @@ export const useAppStore = create<AppState>((set, get) => ({
           ? {
               ...assignment,
               seats: assignment.seats.map((seat) =>
-                seat.seatId === seatId ? { ...seat, student } : seat
+                seat.seatId === seatId ? { ...seat, student, type: student ? 'seat' : seat.type } : seat
               ),
             }
           : assignment
       ),
+    })),
+  updateSeatType: (roomId, seatId, type) =>
+    set((state) => ({
+      roomAssignments: state.roomAssignments.map((assignment) =>
+        assignment.roomId === roomId
+          ? {
+              ...assignment,
+              seats: assignment.seats.map((seat) =>
+                seat.seatId === seatId ? { ...seat, type, student: type !== 'seat' ? null : seat.student } : seat
+              ),
+            }
+          : assignment
+      ),
+    })),
+  addEmptyRowBottom: (roomId) =>
+    set((state) => ({
+      roomAssignments: state.roomAssignments.map((assignment) => {
+        if (assignment.roomId !== roomId) return assignment;
+        const newSeats: SeatAssignment[] = [...assignment.seats];
+        for (let i = 0; i < assignment.columns; i++) {
+          newSeats.push({
+            seatId: crypto.randomUUID(),
+            student: null,
+            position: { row: assignment.rows, col: i },
+            type: 'empty'
+          });
+        }
+        return {
+          ...assignment,
+          rows: assignment.rows + 1,
+          seats: newSeats
+        };
+      })
+    })),
+  addEmptyRowTop: (roomId) =>
+    set((state) => ({
+      roomAssignments: state.roomAssignments.map((assignment) => {
+        if (assignment.roomId !== roomId) return assignment;
+        const addedSeats: SeatAssignment[] = [];
+        for (let i = 0; i < assignment.columns; i++) {
+          addedSeats.push({
+            seatId: crypto.randomUUID(),
+            student: null,
+            position: { row: 0, col: i },
+            type: 'empty'
+          });
+        }
+        return {
+          ...assignment,
+          rows: assignment.rows + 1,
+          seats: [...addedSeats, ...assignment.seats]
+        };
+      })
+    })),
+  addEmptyColumnRight: (roomId) =>
+    set((state) => ({
+      roomAssignments: state.roomAssignments.map((assignment) => {
+        if (assignment.roomId !== roomId) return assignment;
+        const newSeats: SeatAssignment[] = [];
+        for (let r = 0; r < assignment.rows; r++) {
+          for (let c = 0; c < assignment.columns; c++) {
+            newSeats.push(assignment.seats[r * assignment.columns + c]);
+          }
+          // Tambahkan 1 kursi di kanan
+          newSeats.push({
+            seatId: crypto.randomUUID(),
+            student: null,
+            position: { row: r, col: assignment.columns },
+            type: 'empty'
+          });
+        }
+        return {
+          ...assignment,
+          columns: assignment.columns + 1,
+          seats: newSeats
+        };
+      })
+    })),
+  addEmptyColumnLeft: (roomId) =>
+    set((state) => ({
+      roomAssignments: state.roomAssignments.map((assignment) => {
+        if (assignment.roomId !== roomId) return assignment;
+        const newSeats: SeatAssignment[] = [];
+        for (let r = 0; r < assignment.rows; r++) {
+          // Tambahkan 1 kursi di kiri
+          newSeats.push({
+            seatId: crypto.randomUUID(),
+            student: null,
+            position: { row: r, col: 0 },
+            type: 'empty'
+          });
+          for (let c = 0; c < assignment.columns; c++) {
+            newSeats.push(assignment.seats[r * assignment.columns + c]);
+          }
+        }
+        return {
+          ...assignment,
+          columns: assignment.columns + 1,
+          seats: newSeats
+        };
+      })
     })),
   clearRoomAssignments: () => set({ roomAssignments: [] }),
 

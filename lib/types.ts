@@ -19,6 +19,7 @@ export interface SeatAssignment {
   seatId: string;
   student: Student | null;
   position: SeatPosition;
+  type?: 'seat' | 'pengawas' | 'pintu' | 'empty';
 }
 
 export interface RoomAssignment {

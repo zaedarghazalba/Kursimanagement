@@ -46,6 +46,25 @@ export const distributeStudentsToRooms = (
     };
   }
 
+  // Acak secara terstruktur (Round-Robin per kelas) untuk mencampur grade di satu ruangan
+  const studentsByClass = new Map<string, Student[]>();
+  students.forEach(s => {
+    if (!studentsByClass.has(s.kelas)) studentsByClass.set(s.kelas, []);
+    studentsByClass.get(s.kelas)!.push(s);
+  });
+
+  const mixedStudents: Student[] = [];
+  let hasMore = true;
+  while(hasMore) {
+    hasMore = false;
+    for (const classStudents of studentsByClass.values()) {
+      if (classStudents.length > 0) {
+        mixedStudents.push(classStudents.shift()!);
+        hasMore = true;
+      }
+    }
+  }
+
   const assignments: RoomAssignment[] = [];
   let studentIndex = 0;
   const unassignedStudents: Student[] = [];
@@ -54,11 +73,12 @@ export const distributeStudentsToRooms = (
     const seats: SeatAssignment[] = [];
 
     for (let i = 0; i < room.kapasitas; i++) {
-      if (studentIndex < students.length) {
+      if (studentIndex < mixedStudents.length) {
         seats.push({
           seatId: uuidv4(),
-          student: students[studentIndex],
+          student: mixedStudents[studentIndex],
           position: { row: 0, col: 0 }, // Will be calculated later
+          type: 'seat'
         });
         studentIndex++;
       } else {
@@ -66,6 +86,7 @@ export const distributeStudentsToRooms = (
           seatId: uuidv4(),
           student: null,
           position: { row: 0, col: 0 },
+          type: 'empty'
         });
       }
     }

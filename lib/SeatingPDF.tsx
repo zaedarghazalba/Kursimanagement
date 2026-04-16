@@ -26,6 +26,30 @@ const getSeatStyle = (totalRows: number, seatHeight: number) => {
       flex: 1,
       height: seatHeight,
     },
+    seatBoxPengawas: {
+      borderWidth: 1,
+      borderColor: '#fbbf24',
+      borderRadius: 2,
+      marginRight: 2,
+      padding: 2,
+      backgroundColor: '#fffbeb',
+      flex: 1,
+      height: seatHeight,
+      justifyContent: 'center' as const,
+      alignItems: 'center' as const,
+    },
+    seatBoxPintu: {
+      borderWidth: 1,
+      borderColor: '#34d399',
+      borderRadius: 2,
+      marginRight: 2,
+      padding: 2,
+      backgroundColor: '#ecfdf5',
+      flex: 1,
+      height: seatHeight,
+      justifyContent: 'center' as const,
+      alignItems: 'center' as const,
+    },
     seatNumber: {
       fontSize: Math.max(4, seatHeight * 0.15),
       fontWeight: 'bold' as const,
@@ -47,6 +71,17 @@ const getSeatStyle = (totalRows: number, seatHeight: number) => {
     emptyText: {
       fontSize,
       color: '#94a3b8',
+      textAlign: 'center' as const,
+    },
+    textPengawas: {
+      fontSize: fontSize * 1.2,
+      fontWeight: 'bold' as const,
+      color: '#b45309',
+    },
+    textPintu: {
+      fontSize: fontSize * 1.2,
+      fontWeight: 'bold' as const,
+      color: '#047857',
       textAlign: 'center' as const,
     },
   };
@@ -144,6 +179,27 @@ const SeatingPDF = ({ assignments }: { assignments: RoomAssignment[] }) => {
         const totalGaps = (totalRows - 1) * rowGap;
         const seatHeight = Math.max(18, (availableHeight - totalGaps) / totalRows);
 
+        // Compute dynamic snake numbers
+        const seatToNumberMap = new Map<string, number>();
+        let currentNumber = 1;
+        for (let c = 0; c < cols; c++) {
+          const isUpward = c % 2 === 0;
+          const rowIndices = [];
+          if (isUpward) {
+            for (let r = totalRows - 1; r >= 0; r--) rowIndices.push(r);
+          } else {
+            for (let r = 0; r < totalRows; r++) rowIndices.push(r);
+          }
+          for (const r of rowIndices) {
+            const index = r * cols + c;
+            const seat = assignment.seats[index];
+            if (seat && seat.type !== 'pengawas' && seat.type !== 'pintu') {
+              seatToNumberMap.set(seat.seatId, currentNumber);
+              currentNumber++;
+            }
+          }
+        }
+
         const seatStyle = getSeatStyle(totalRows, seatHeight);
 
         return (
@@ -161,7 +217,7 @@ const SeatingPDF = ({ assignments }: { assignments: RoomAssignment[] }) => {
 
             {/* Legend */}
             <View style={staticStyles.legendContainer}>
-              <View style={staticStyles.legendItem}>
+             <View style={staticStyles.legendItem}>
                 <View style={[staticStyles.legendBox, staticStyles.legendBoxNormal]} />
                 <Text style={staticStyles.legendText}>Terisi</Text>
               </View>
@@ -181,19 +237,27 @@ const SeatingPDF = ({ assignments }: { assignments: RoomAssignment[] }) => {
 
                     if (!seat) return null;
 
-                    const seatNumber = seatIndex + 1;
+                    const dynamicNo = seatToNumberMap.get(seat.seatId) || '';
 
                     return seat.student ? (
                       <View key={colIndex} style={seatStyle.seatBox}>
-                        <Text style={seatStyle.seatNumber}>#{seatNumber}</Text>
+                        <Text style={seatStyle.seatNumber}>#{dynamicNo}</Text>
                         <Text style={seatStyle.studentName}>
                           {seat.student.nama}
                         </Text>
                         <Text style={seatStyle.studentClass}>{seat.student.kelas}</Text>
                       </View>
+                    ) : seat.type === 'pengawas' ? (
+                      <View key={colIndex} style={seatStyle.seatBoxPengawas}>
+                        <Text style={seatStyle.textPengawas}>Meja Pengawas</Text>
+                      </View>
+                    ) : seat.type === 'pintu' ? (
+                      <View key={colIndex} style={seatStyle.seatBoxPintu}>
+                        <Text style={seatStyle.textPintu}>Pintu Masuk / Keluar</Text>
+                      </View>
                     ) : (
                       <View key={colIndex} style={seatStyle.seatBoxEmpty}>
-                        <Text style={seatStyle.seatNumber}>#{seatNumber}</Text>
+                        <Text style={seatStyle.seatNumber}>#{dynamicNo}</Text>
                         <Text style={seatStyle.emptyText}>Kosong</Text>
                       </View>
                     );

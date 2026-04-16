@@ -1,19 +1,31 @@
 'use client';
 
+import { useState } from 'react';
 import { useAppStore } from '@/store/useAppStore';
 import { generateAttendance } from '@/lib/excelExport';
 import { exportAttendance, exportSeatingByRoom } from '@/lib/excelExport';
 import PDFExport from '@/components/PDFExport';
-import { Download, FileSpreadsheet, Users, FileText } from 'lucide-react';
+import { Download, FileSpreadsheet, Users, FileText, Filter } from 'lucide-react';
 
 export default function AbsensiPage() {
   const { roomAssignments, students } = useAppStore();
+  const [selectedRoom, setSelectedRoom] = useState<string>('all');
+  const [selectedClass, setSelectedClass] = useState<string>('all');
 
-  const attendance = generateAttendance(roomAssignments);
+  const fullAttendance = generateAttendance(roomAssignments);
+  
+  const uniqueRooms = Array.from(new Set(fullAttendance.map((a) => a.ruangan))).sort();
+  const uniqueClasses = Array.from(new Set(fullAttendance.map((a) => a.kelas))).sort();
+
+  const attendance = fullAttendance.filter((record) => {
+    if (selectedRoom !== 'all' && record.ruangan !== selectedRoom) return false;
+    if (selectedClass !== 'all' && record.kelas !== selectedClass) return false;
+    return true;
+  });
 
   const handleExportAttendance = () => {
     if (roomAssignments.length === 0) return;
-    exportAttendance(roomAssignments);
+    exportAttendance(roomAssignments, selectedRoom, selectedClass);
   };
 
   const handleExportSeating = () => {
@@ -43,15 +55,15 @@ export default function AbsensiPage() {
                 onClick={handleExportAttendance}
                 className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-white text-indigo-700 rounded-lg hover:bg-indigo-50 transition-colors font-semibold text-sm sm:text-base shadow-sm"
               >
-                <Download className="w-4 h-4" />
-                <span className="sm:inline">Excel</span>
+                <FileText className="w-4 h-4" />
+                <span className="sm:inline">Generate Absensi</span>
               </button>
               <button
                 onClick={handleExportSeating}
                 className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-400 transition-colors font-semibold text-sm sm:text-base shadow-sm"
               >
                 <FileSpreadsheet className="w-4 h-4" />
-                <span className="sm:inline">PDF</span>
+                <span className="sm:inline">Generate Denah</span>
               </button>
             </div>
           )}
@@ -78,13 +90,46 @@ export default function AbsensiPage() {
 
           <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4 mb-6">
             <p className="text-sm text-indigo-800 font-medium">
-              Total Siswa Terdata: <span className="font-bold text-indigo-900">{attendance.length}</span> siswa
+              Total Siswa Terdata: <span className="font-bold text-indigo-900">{fullAttendance.length}</span> siswa
               dari <span className="font-bold text-indigo-900">{students.length}</span> siswa
             </p>
           </div>
 
           <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-3 sm:p-6">
-            <h2 className="text-base sm:text-xl font-bold text-slate-800 mb-4">Daftar Absensi</h2>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+              <h2 className="text-base sm:text-xl font-bold text-slate-800">Daftar Absensi</h2>
+              
+              <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                <div className="flex items-center gap-2">
+                  <Filter className="w-4 h-4 text-slate-400" />
+                  <select
+                    value={selectedRoom}
+                    onChange={(e) => setSelectedRoom(e.target.value)}
+                    className="text-sm border-slate-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-1.5 pl-3 pr-8"
+                  >
+                    <option value="all">Semua Ruangan</option>
+                    {uniqueRooms.map((room) => (
+                      <option key={room} value={room}>{room}</option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <Filter className="w-4 h-4 text-slate-400" />
+                  <select
+                    value={selectedClass}
+                    onChange={(e) => setSelectedClass(e.target.value)}
+                    className="text-sm border-slate-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-1.5 pl-3 pr-8"
+                  >
+                    <option value="all">Semua Kelas</option>
+                    {uniqueClasses.map((cls) => (
+                      <option key={cls} value={cls}>Kelas {cls}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+
             <div className="overflow-x-auto -mx-3 sm:mx-0 px-3 sm:px-0">
               <table className="w-full min-w-[600px]">
                 <thead className="bg-slate-50 border-b border-slate-200">
