@@ -2,17 +2,20 @@
 
 import { useState } from 'react';
 import { useAppStore } from '@/store/useAppStore';
-import { distributeStudentsToRooms } from '@/lib/roomDistributor';
+import { distributeStudentsToRooms, SeatingMode } from '@/lib/roomDistributor';
 import { generateSeatingArrangement } from '@/lib/seatingGenerator';
 import SeatGrid from '@/components/SeatGrid';
 import LayoutSettings from '@/components/LayoutSettings';
-import { Shuffle, AlertCircle, CheckCircle, Loader2, Settings, Grid3X3 } from 'lucide-react';
+import { Shuffle, AlignJustify, AlertCircle, CheckCircle, Loader2, Settings, Grid3X3 } from 'lucide-react';
 
 export default function DenahPage() {
-  const { students, rooms, roomAssignments, setRoomAssignments, activeRoomId, setActiveRoomId, customColumns } = useAppStore();
+  const { students, rooms, roomAssignments, setRoomAssignments, activeRoomId, setActiveRoomId, customRows, customColumns } = useAppStore();
   const [isGenerating, setIsGenerating] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error' | 'info'; text: string } | null>(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [seatingMode, setSeatingMode] = useState<SeatingMode>('acak');
+
+
 
   const handleGenerate = async () => {
     if (students.length === 0) {
@@ -33,7 +36,9 @@ export default function DenahPage() {
 
     // Distribute students to rooms WITH custom columns
     const distribution = distributeStudentsToRooms(students, rooms, {
+      customRows: customRows || undefined,
       customColumns: customColumns || undefined,
+      seatingMode,
     });
 
     if (!distribution.success) {
@@ -42,15 +47,22 @@ export default function DenahPage() {
       return;
     }
 
-    // Generate seating arrangement
-    const seatingResult = generateSeatingArrangement(distribution.assignments);
-
-    setRoomAssignments(seatingResult.assignments);
-    setMessage({ type: 'success', text: seatingResult.message });
+    // Jika mode urut: distribusi langsung tanpa constraint-shuffle
+    // Jika mode acak: jalankan seatingGenerator untuk meminimalkan konflik kelas berdekatan
+    let finalAssignments = distribution.assignments;
+    if (seatingMode === 'acak') {
+      const seatingResult = generateSeatingArrangement(distribution.assignments);
+      finalAssignments = seatingResult.assignments;
+      setRoomAssignments(finalAssignments);
+      setMessage({ type: 'success', text: seatingResult.message });
+    } else {
+      setRoomAssignments(finalAssignments);
+      setMessage({ type: 'success', text: `✅ Berhasil membagi ${students.length} siswa urut ke ${rooms.length} ruangan` });
+    }
 
     // Set active room to first room
-    if (seatingResult.assignments.length > 0 && !activeRoomId) {
-      setActiveRoomId(seatingResult.assignments[0].roomId);
+    if (finalAssignments.length > 0 && !activeRoomId) {
+      setActiveRoomId(finalAssignments[0].roomId);
     }
 
     setIsGenerating(false);
@@ -60,6 +72,8 @@ export default function DenahPage() {
 
   return (
     <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 max-w-7xl">
+
+
       {/* Page Header */}
       <div className="bg-gradient-to-r from-indigo-700 via-indigo-600 to-indigo-700 rounded-xl p-4 sm:p-6 mb-4 sm:mb-8 shadow-lg">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0">
@@ -75,6 +89,31 @@ export default function DenahPage() {
             </div>
           </div>
           <div className="flex gap-2 w-full sm:w-auto flex-col sm:flex-row">
+            {/* Toggle Acak / Urut */}
+            <div className="flex rounded-lg overflow-hidden border border-white/30">
+              <button
+                onClick={() => setSeatingMode('acak')}
+                className={`flex items-center gap-1.5 px-3 py-2 text-sm font-semibold transition-all ${
+                  seatingMode === 'acak'
+                    ? 'bg-white text-indigo-700'
+                    : 'bg-white/15 text-white hover:bg-white/25'
+                }`}
+              >
+                <Shuffle className="w-4 h-4" />
+                Acak
+              </button>
+              <button
+                onClick={() => setSeatingMode('urut')}
+                className={`flex items-center gap-1.5 px-3 py-2 text-sm font-semibold transition-all ${
+                  seatingMode === 'urut'
+                    ? 'bg-white text-indigo-700'
+                    : 'bg-white/15 text-white hover:bg-white/25'
+                }`}
+              >
+                <AlignJustify className="w-4 h-4" />
+                Urut
+              </button>
+            </div>
             <button
               onClick={() => setShowSettings(!showSettings)}
               className={`flex items-center justify-center gap-2 px-3 sm:px-4 py-2 sm:py-2 rounded-lg transition-all duration-200 font-medium text-sm sm:text-base ${
@@ -151,7 +190,7 @@ export default function DenahPage() {
           {/* Seat Grid */}
           {activeAssignment && (
             <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
-              <SeatGrid assignment={activeAssignment} />
+              <SeatGrid assignment={activeAssignment} seatingMode={seatingMode} />
             </div>
           )}
         </>

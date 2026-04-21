@@ -1,6 +1,15 @@
 import { Student, Room, RoomAssignment, SeatAssignment } from '@/lib/types';
 import { v4 as uuidv4 } from 'uuid';
 
+const shuffleArray = <T>(array: T[]): T[] => {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+};
+
 export interface DistributionResult {
   success: boolean;
   assignments: RoomAssignment[];
@@ -8,8 +17,12 @@ export interface DistributionResult {
   message: string;
 }
 
+export type SeatingMode = 'acak' | 'urut';
+
 export interface DistributionOptions {
+  customRows?: number;
   customColumns?: number;
+  seatingMode?: SeatingMode;
 }
 
 export const distributeStudentsToRooms = (
@@ -46,38 +59,68 @@ export const distributeStudentsToRooms = (
     };
   }
 
-  // Acak secara terstruktur (Round-Robin per kelas) untuk mencampur grade di satu ruangan
-  const studentsByClass = new Map<string, Student[]>();
-  students.forEach(s => {
-    if (!studentsByClass.has(s.kelas)) studentsByClass.set(s.kelas, []);
-    studentsByClass.get(s.kelas)!.push(s);
-  });
+  const mode = options?.seatingMode ?? 'acak';
 
-  const mixedStudents: Student[] = [];
-  let hasMore = true;
-  while(hasMore) {
-    hasMore = false;
-    for (const classStudents of studentsByClass.values()) {
-      if (classStudents.length > 0) {
-        mixedStudents.push(classStudents.shift()!);
-        hasMore = true;
+  let orderedStudents: Student[];
+
+  if (mode === 'urut') {
+    orderedStudents = [...students].sort((a, b) => {
+      const kelasCompare = a.kelas.localeCompare(b.kelas, 'id');
+      if (kelasCompare !== 0) return kelasCompare;
+      return a.nama.localeCompare(b.nama, 'id');
+    });
+  } else {
+    const studentsByClass = new Map<string, Student[]>();
+    students.forEach(s => {
+      if (!studentsByClass.has(s.kelas)) studentsByClass.set(s.kelas, []);
+      studentsByClass.get(s.kelas)!.push(s);
+    });
+
+    for (const [key, arr] of studentsByClass) {
+      studentsByClass.set(key, shuffleArray(arr));
+    }
+
+    const mixedStudents: Student[] = [];
+    let hasMore = true;
+    while (hasMore) {
+      hasMore = false;
+      for (const classStudents of studentsByClass.values()) {
+        if (classStudents.length > 0) {
+          mixedStudents.push(classStudents.shift()!);
+          hasMore = true;
+        }
       }
     }
+    orderedStudents = mixedStudents;
   }
 
   const assignments: RoomAssignment[] = [];
   let studentIndex = 0;
-  const unassignedStudents: Student[] = [];
 
   for (const room of rooms) {
     const seats: SeatAssignment[] = [];
+    
+    // Calculate layout BEFORE creating seats
+    const columns = options?.customColumns || calculateOptimalColumns(room.kapasitas);
+    let rows = options?.customRows || Math.ceil(room.kapasitas / columns);
+    
+    // Check how many students go into this room
+    const studentsInThisRoom = Math.min(orderedStudents.length - studentIndex, room.kapasitas);
+    
+    // Ensure grid is large enough for students
+    if (rows * columns < studentsInThisRoom) {
+      rows = Math.ceil(studentsInThisRoom / columns);
+    }
 
-    for (let i = 0; i < room.kapasitas; i++) {
-      if (studentIndex < mixedStudents.length) {
+    const totalSeatsInGrid = rows * columns;
+    const maxSeats = Math.min(totalSeatsInGrid, room.kapasitas);
+
+    for (let i = 0; i < maxSeats; i++) {
+      if (studentIndex < orderedStudents.length) {
         seats.push({
           seatId: uuidv4(),
-          student: mixedStudents[studentIndex],
-          position: { row: 0, col: 0 }, // Will be calculated later
+          student: orderedStudents[studentIndex],
+          position: { row: Math.floor(i / columns), col: i % columns },
           type: 'seat'
         });
         studentIndex++;
@@ -85,23 +128,11 @@ export const distributeStudentsToRooms = (
         seats.push({
           seatId: uuidv4(),
           student: null,
-          position: { row: 0, col: 0 },
+          position: { row: Math.floor(i / columns), col: i % columns },
           type: 'empty'
         });
       }
     }
-
-    // Calculate rows and columns for the room
-    const columns = options?.customColumns || calculateOptimalColumns(room.kapasitas);
-    const rows = Math.ceil(room.kapasitas / columns);
-
-    // Assign positions to seats
-    seats.forEach((seat, index) => {
-      seat.position = {
-        row: Math.floor(index / columns),
-        col: index % columns,
-      };
-    });
 
     assignments.push({
       roomId: room.id,
@@ -112,10 +143,7 @@ export const distributeStudentsToRooms = (
     });
   }
 
-  // Any remaining students
-  for (let i = studentIndex; i < students.length; i++) {
-    unassignedStudents.push(students[i]);
-  }
+  const unassignedStudents = orderedStudents.slice(studentIndex);
 
   return {
     success: unassignedStudents.length === 0,
@@ -128,8 +156,7 @@ export const distributeStudentsToRooms = (
 };
 
 const calculateOptimalColumns = (kapasitas: number): number => {
-  // Try to find a good aspect ratio (approximately 4:3 or 16:9)
   const sqrt = Math.sqrt(kapasitas);
-  const cols = Math.round(sqrt * 1.3); // Slightly wider than square
-  return Math.min(cols, kapasitas);
+  const cols = Math.round(sqrt * 1.3);
+  return Math.max(1, Math.min(cols, kapasitas));
 };

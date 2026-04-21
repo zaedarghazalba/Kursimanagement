@@ -1,6 +1,11 @@
 export interface Student {
   id: string;
+  no: number;
+  nis: string;
+  nisn: string;
   nama: string;
+  jenisKelamin: string;
+  agama: string;
   kelas: string;
 }
 
@@ -35,8 +40,12 @@ export interface RoomAssignment {
 
 export interface AttendanceRecord {
   nomor: number;
+  nis: string;
+  nisn: string;
   nama: string;
+  jenisKelamin: string;
+  agama: string;
   kelas: string;
-  nomorKursi: number;
+  nomorKursi: number | string;
   ruangan: string;
 }

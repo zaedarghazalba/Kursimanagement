@@ -134,55 +134,118 @@ export default function HomePage() {
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-4 sm:p-6">
-        <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-slate-800 mb-4 sm:mb-6">Panduan Penggunaan</h2>
-        <div className="space-y-3 sm:space-y-4 md:space-y-6">
-          <div className="flex items-start gap-3 sm:gap-4">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-indigo-600 text-white rounded-full flex items-center justify-center flex-shrink-0 font-bold text-sm sm:text-lg">
+      <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-4 sm:p-8">
+        <h2 className="text-xl sm:text-2xl font-extrabold text-slate-800 mb-6 flex items-center gap-3">
+          <FileText className="w-6 h-6 text-indigo-600" />
+          Panduan Penggunaan Sistem
+        </h2>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {/* Step 1 */}
+          <div className="relative pl-12">
+            <div className="absolute left-0 top-0 w-10 h-10 bg-indigo-600 text-white rounded-xl flex items-center justify-center font-bold shadow-lg shadow-indigo-200">
               1
             </div>
-            <div>
-              <h3 className="font-semibold text-slate-800 mb-1 text-sm sm:text-base md:text-lg">Upload Data Siswa</h3>
-              <p className="text-xs sm:text-sm text-slate-600">
-                Upload file Excel dengan kolom <code className="bg-slate-100 px-1 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm text-slate-800 font-medium">nama</code> dan <code className="bg-slate-100 px-1 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm text-slate-800 font-medium">kelas</code>
-              </p>
+            <h3 className="font-bold text-slate-800 mb-2 text-lg">Persiapan Data (Upload)</h3>
+            <p className="text-sm text-slate-600 leading-relaxed mb-3">
+              Pastikan file Excel Anda memiliki 7 kolom berikut (urutan tidak masalah, namun pastikan Nama Header benar):
+            </p>
+            <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 text-[11px] font-mono text-slate-700 grid grid-cols-2 gap-2">
+              <div className="bg-white p-1.5 border rounded flex items-center gap-2">
+                <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full"></span> <strong>No</strong>
+              </div>
+              <div className="bg-white p-1.5 border rounded flex items-center gap-2">
+                <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full"></span> <strong>NIS</strong>
+              </div>
+              <div className="bg-white p-1.5 border rounded flex items-center gap-2">
+                <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full"></span> <strong>NISN</strong>
+              </div>
+              <div className="bg-white p-1.5 border rounded flex items-center gap-2">
+                <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full"></span> <strong>Nama</strong>
+              </div>
+              <div className="bg-white p-1.5 border rounded flex items-center gap-2">
+                <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full"></span> <strong>Jenis Kelamin</strong>
+              </div>
+              <div className="bg-white p-1.5 border rounded flex items-center gap-2">
+                <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full"></span> <strong>Agama</strong>
+              </div>
+              <div className="bg-white p-1.5 border rounded flex items-center gap-2">
+                <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full"></span> <strong>Kelas</strong>
+              </div>
             </div>
+            <p className="text-[10px] text-indigo-600 mt-2 italic font-medium">
+              * Pastikan tidak ada typo pada nama kolom di baris pertama Excel Anda.
+            </p>
           </div>
 
-          <div className="flex items-start gap-3 sm:gap-4">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-emerald-600 text-white rounded-full flex items-center justify-center flex-shrink-0 font-bold text-sm sm:text-lg">
+          {/* Step 2 */}
+          <div className="relative pl-12">
+            <div className="absolute left-0 top-0 w-10 h-10 bg-emerald-600 text-white rounded-xl flex items-center justify-center font-bold shadow-lg shadow-emerald-200">
               2
             </div>
-            <div>
-              <h3 className="font-semibold text-slate-800 mb-1 text-sm sm:text-base md:text-lg">Pengaturan Ruangan</h3>
-              <p className="text-xs sm:text-sm text-slate-600">
-                Tambahkan ruangan dan tentukan kapasitas masing-masing ruangan
-              </p>
-            </div>
+            <h3 className="font-bold text-slate-800 mb-2 text-lg">Manajemen Ruang & Layout</h3>
+            <p className="text-sm text-slate-600 leading-relaxed">
+              Masuk ke menu <span className="font-semibold text-emerald-700">Ruangan</span> untuk menambah daftar ruang ujian. 
+              Gunakan fitur <span className="font-semibold">Layout Settings</span> di halaman Denah untuk mengatur jumlah Baris, Kolom, dan Lorong (Aisle Gap) secara visual.
+            </p>
           </div>
 
-          <div className="flex items-start gap-3 sm:gap-4">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-sky-600 text-white rounded-full flex items-center justify-center flex-shrink-0 font-bold text-sm sm:text-lg">
+          {/* Step 3 */}
+          <div className="relative pl-12">
+            <div className="absolute left-0 top-0 w-10 h-10 bg-sky-600 text-white rounded-xl flex items-center justify-center font-bold shadow-lg shadow-sky-200">
               3
             </div>
-            <div>
-              <h3 className="font-semibold text-slate-800 mb-1 text-sm sm:text-base md:text-lg">Generate Denah</h3>
-              <p className="text-xs sm:text-sm text-slate-600">
-                Sistem akan otomatis membagi siswa dan membuat denah tempat duduk
-              </p>
+            <h3 className="font-bold text-slate-800 mb-2 text-lg">Distribusi & Mode Seating</h3>
+            <p className="text-sm text-slate-600 leading-relaxed mb-2">
+              Pilih mode pembagian tempat duduk yang sesuai:
+            </p>
+            <ul className="text-sm space-y-1.5">
+              <li className="flex items-center gap-2 text-slate-700">
+                <span className="w-1.5 h-1.5 bg-sky-500 rounded-full"></span>
+                <span className="font-semibold">Acak:</span> Meminimalkan konflik kelas yang sama duduk berdekatan.
+              </li>
+              <li className="flex items-center gap-2 text-slate-700">
+                <span className="w-1.5 h-1.5 bg-sky-500 rounded-full"></span>
+                <span className="font-semibold">Urut:</span> Membagi siswa sesuai urutan absen dari Excel.
+              </li>
+            </ul>
+          </div>
+
+          {/* Step 4 */}
+          <div className="relative pl-12">
+            <div className="absolute left-0 top-0 w-10 h-10 bg-violet-600 text-white rounded-xl flex items-center justify-center font-bold shadow-lg shadow-violet-200">
+              4
+            </div>
+            <h3 className="font-bold text-slate-800 mb-2 text-lg">Edit Denah Manual</h3>
+            <p className="text-sm text-slate-600 leading-relaxed">
+              Gunakan fitur interaktif untuk hasil yang presisi:
+            </p>
+            <div className="grid grid-cols-2 gap-2 mt-2">
+              <div className="text-[11px] bg-violet-50 p-2 rounded border border-violet-100 text-violet-800">
+                <strong>Drag & Drop:</strong> Tukar posisi antar siswa.
+              </div>
+              <div className="text-[11px] bg-violet-50 p-2 rounded border border-violet-100 text-violet-800">
+                <strong>Pindah:</strong> Klik ikon panah untuk pindah ruangan.
+              </div>
+              <div className="text-[11px] bg-violet-50 p-2 rounded border border-violet-100 text-violet-800">
+                <strong>Hapus:</strong> Hapus kursi kosong/berlebih.
+              </div>
+              <div className="text-[11px] bg-violet-50 p-2 rounded border border-violet-100 text-violet-800">
+                <strong>Toggle:</strong> Klik kursi untuk set Meja Pengawas.
+              </div>
             </div>
           </div>
 
-          <div className="flex items-start gap-3 sm:gap-4">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-violet-600 text-white rounded-full flex items-center justify-center flex-shrink-0 font-bold text-sm sm:text-lg">
-              4
+          {/* Step 5 */}
+          <div className="relative pl-12 md:col-span-2">
+            <div className="absolute left-0 top-0 w-10 h-10 bg-amber-500 text-white rounded-xl flex items-center justify-center font-bold shadow-lg shadow-amber-200">
+              5
             </div>
-            <div>
-              <h3 className="font-semibold text-slate-800 mb-1 text-sm sm:text-base md:text-lg">Export Data</h3>
-              <p className="text-xs sm:text-sm text-slate-600">
-                Export data absensi dan denah ke format Excel atau PDF
-              </p>
-            </div>
+            <h3 className="font-bold text-slate-800 mb-2 text-lg">Export Laporan Resmi</h3>
+            <p className="text-sm text-slate-600 leading-relaxed">
+              Sistem akan menghasilkan file Excel profesional dengan **Kop Surat Resmi SMP Negeri 12 Tarakan**. 
+              Buka menu <span className="font-semibold text-amber-700">Absensi</span> untuk mengunduh Daftar Hadir (Absensi) dan Denah Ruangan yang siap cetak.
+            </p>
           </div>
         </div>
       </div>

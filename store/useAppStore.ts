@@ -26,6 +26,8 @@ interface AppState {
   addEmptyColumnLeft: (roomId: string) => void;
   addEmptyColumnRight: (roomId: string) => void;
   clearRoomAssignments: () => void;
+  moveStudent: (fromRoomId: string, studentId: string, toRoomId: string) => void;
+  deleteSeat: (roomId: string, seatId: string) => void;
 
   // UI State
   activeRoomId: string | null;
@@ -100,94 +102,191 @@ export const useAppStore = create<AppState>((set, get) => ({
       ),
     })),
   addEmptyRowBottom: (roomId) =>
-    set((state) => ({
-      roomAssignments: state.roomAssignments.map((assignment) => {
-        if (assignment.roomId !== roomId) return assignment;
-        const newSeats: SeatAssignment[] = [...assignment.seats];
-        for (let i = 0; i < assignment.columns; i++) {
-          newSeats.push({
-            seatId: crypto.randomUUID(),
-            student: null,
-            position: { row: assignment.rows, col: i },
-            type: 'empty'
-          });
-        }
-        return {
-          ...assignment,
-          rows: assignment.rows + 1,
-          seats: newSeats
-        };
-      })
-    })),
+    set((state) => {
+      const assignment = state.roomAssignments.find(a => a.roomId === roomId);
+      if (!assignment) return state;
+      
+      const newSeats: SeatAssignment[] = [...assignment.seats];
+      for (let i = 0; i < assignment.columns; i++) {
+        newSeats.push({
+          seatId: crypto.randomUUID(),
+          student: null,
+          position: { row: assignment.rows, col: i },
+          type: 'empty'
+        });
+      }
+      
+      return {
+        roomAssignments: state.roomAssignments.map((a) =>
+          a.roomId === roomId ? { ...a, rows: a.rows + 1, seats: newSeats } : a
+        ),
+        rooms: state.rooms.map((r) =>
+          r.id === roomId ? { ...r, kapasitas: r.kapasitas + assignment.columns } : r
+        )
+      };
+    }),
   addEmptyRowTop: (roomId) =>
-    set((state) => ({
-      roomAssignments: state.roomAssignments.map((assignment) => {
-        if (assignment.roomId !== roomId) return assignment;
-        const addedSeats: SeatAssignment[] = [];
-        for (let i = 0; i < assignment.columns; i++) {
-          addedSeats.push({
-            seatId: crypto.randomUUID(),
-            student: null,
-            position: { row: 0, col: i },
-            type: 'empty'
-          });
-        }
-        return {
-          ...assignment,
-          rows: assignment.rows + 1,
-          seats: [...addedSeats, ...assignment.seats]
-        };
-      })
-    })),
+    set((state) => {
+      const assignment = state.roomAssignments.find(a => a.roomId === roomId);
+      if (!assignment) return state;
+
+      const addedSeats: SeatAssignment[] = [];
+      for (let i = 0; i < assignment.columns; i++) {
+        addedSeats.push({
+          seatId: crypto.randomUUID(),
+          student: null,
+          position: { row: 0, col: i },
+          type: 'empty'
+        });
+      }
+      
+      return {
+        roomAssignments: state.roomAssignments.map((a) =>
+          a.roomId === roomId ? { ...a, rows: a.rows + 1, seats: [...addedSeats, ...a.seats] } : a
+        ),
+        rooms: state.rooms.map((r) =>
+          r.id === roomId ? { ...r, kapasitas: r.kapasitas + assignment.columns } : r
+        )
+      };
+    }),
   addEmptyColumnRight: (roomId) =>
-    set((state) => ({
-      roomAssignments: state.roomAssignments.map((assignment) => {
-        if (assignment.roomId !== roomId) return assignment;
-        const newSeats: SeatAssignment[] = [];
-        for (let r = 0; r < assignment.rows; r++) {
-          for (let c = 0; c < assignment.columns; c++) {
-            newSeats.push(assignment.seats[r * assignment.columns + c]);
-          }
-          // Tambahkan 1 kursi di kanan
-          newSeats.push({
-            seatId: crypto.randomUUID(),
-            student: null,
-            position: { row: r, col: assignment.columns },
-            type: 'empty'
-          });
+    set((state) => {
+      const assignment = state.roomAssignments.find(a => a.roomId === roomId);
+      if (!assignment) return state;
+
+      const newSeats: SeatAssignment[] = [];
+      for (let r = 0; r < assignment.rows; r++) {
+        for (let c = 0; c < assignment.columns; c++) {
+          newSeats.push(assignment.seats[r * assignment.columns + c]);
         }
-        return {
-          ...assignment,
-          columns: assignment.columns + 1,
-          seats: newSeats
-        };
-      })
-    })),
+        newSeats.push({
+          seatId: crypto.randomUUID(),
+          student: null,
+          position: { row: r, col: assignment.columns },
+          type: 'empty'
+        });
+      }
+      
+      return {
+        roomAssignments: state.roomAssignments.map((a) =>
+          a.roomId === roomId ? { ...a, columns: a.columns + 1, seats: newSeats } : a
+        ),
+        rooms: state.rooms.map((r) =>
+          r.id === roomId ? { ...r, kapasitas: r.kapasitas + assignment.rows } : r
+        )
+      };
+    }),
   addEmptyColumnLeft: (roomId) =>
-    set((state) => ({
-      roomAssignments: state.roomAssignments.map((assignment) => {
-        if (assignment.roomId !== roomId) return assignment;
-        const newSeats: SeatAssignment[] = [];
-        for (let r = 0; r < assignment.rows; r++) {
-          // Tambahkan 1 kursi di kiri
-          newSeats.push({
-            seatId: crypto.randomUUID(),
-            student: null,
-            position: { row: r, col: 0 },
-            type: 'empty'
-          });
-          for (let c = 0; c < assignment.columns; c++) {
-            newSeats.push(assignment.seats[r * assignment.columns + c]);
-          }
+    set((state) => {
+      const assignment = state.roomAssignments.find(a => a.roomId === roomId);
+      if (!assignment) return state;
+
+      const newSeats: SeatAssignment[] = [];
+      for (let r = 0; r < assignment.rows; r++) {
+        newSeats.push({
+          seatId: crypto.randomUUID(),
+          student: null,
+          position: { row: r, col: 0 },
+          type: 'empty'
+        });
+        for (let c = 0; c < assignment.columns; c++) {
+          newSeats.push(assignment.seats[r * assignment.columns + c]);
         }
-        return {
-          ...assignment,
-          columns: assignment.columns + 1,
-          seats: newSeats
-        };
-      })
-    })),
+      }
+
+      return {
+        roomAssignments: state.roomAssignments.map((a) =>
+          a.roomId === roomId ? { ...a, columns: a.columns + 1, seats: newSeats } : a
+        ),
+        rooms: state.rooms.map((r) =>
+          r.id === roomId ? { ...r, kapasitas: r.kapasitas + assignment.rows } : r
+        )
+      };
+    }),
   clearRoomAssignments: () => set({ roomAssignments: [] }),
+  moveStudent: (fromRoomId, studentId, toRoomId) => {
+    set((state) => {
+      const fromRoom = state.roomAssignments.find(r => r.roomId === fromRoomId);
+      const toRoom = state.roomAssignments.find(r => r.roomId === toRoomId);
+      if (!fromRoom || !toRoom) return state;
+
+      // Find student and remove from old seat
+      let studentToMove: Student | null = null;
+      const newFromSeats = fromRoom.seats.map(seat => {
+        if (seat.student?.id === studentId) {
+          studentToMove = seat.student;
+          return { ...seat, student: null };
+        }
+        return seat;
+      });
+
+      if (!studentToMove) return state;
+
+      // Find first empty/available seat in target room
+      let targetIdx = toRoom.seats.findIndex(s => s.type === 'empty' && !s.student);
+      let newToSeats = [...toRoom.seats];
+      let newToRows = toRoom.rows;
+      let newToKapasitas = state.rooms.find(r => r.id === toRoomId)?.kapasitas || toRoom.seats.length;
+
+      if (targetIdx === -1) {
+        // No empty seat? Add exactly ONE seat
+        const newSeatIdx = toRoom.seats.length;
+        const newSeat: SeatAssignment = {
+          seatId: crypto.randomUUID(),
+          student: null,
+          position: { 
+            row: Math.floor(newSeatIdx / toRoom.columns), 
+            col: newSeatIdx % toRoom.columns 
+          },
+          type: 'empty'
+        };
+        newToSeats.push(newSeat);
+        
+        // Update rows if we just started a new row
+        newToRows = Math.ceil(newToSeats.length / toRoom.columns);
+        newToKapasitas += 1;
+        targetIdx = newSeatIdx;
+      }
+
+      // Assign student to target seat
+      newToSeats[targetIdx] = { 
+        ...newToSeats[targetIdx], 
+        student: studentToMove,
+        type: 'seat'
+      };
+
+      return {
+        roomAssignments: state.roomAssignments.map(r => {
+          if (r.roomId === fromRoomId) return { ...r, seats: newFromSeats };
+          if (r.roomId === toRoomId) return { ...r, seats: newToSeats, rows: newToRows };
+          return r;
+        }),
+        rooms: state.rooms.map(r => 
+          r.id === toRoomId ? { ...r, kapasitas: newToKapasitas } : r
+        )
+      };
+    });
+  },
+  deleteSeat: (roomId, seatId) => {
+    set((state) => {
+      const assignment = state.roomAssignments.find(a => a.roomId === roomId);
+      if (!assignment) return state;
+
+      const newSeats = assignment.seats.filter(s => s.seatId !== seatId);
+      
+      // Recalculate rows if needed
+      const newRows = Math.ceil(newSeats.length / assignment.columns);
+
+      return {
+        roomAssignments: state.roomAssignments.map(a => 
+          a.roomId === roomId ? { ...a, seats: newSeats, rows: newRows } : a
+        ),
+        rooms: state.rooms.map(r => 
+          r.id === roomId ? { ...r, kapasitas: Math.max(0, r.kapasitas - 1) } : r
+        )
+      };
+    });
+  },
 
   // UI State
   activeRoomId: null,

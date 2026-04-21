@@ -13,7 +13,11 @@ export const generateAttendance = (
         const seatNumber = seat.position.row * assignment.columns + seat.position.col + 1;
         records.push({
           nomor: nomor++,
+          nis:  seat.student.nis  || '',
+          nisn: seat.student.nisn || '',
           nama: seat.student.nama,
+          jenisKelamin: seat.student.jenisKelamin || '',
+          agama: seat.student.agama || '',
           kelas: seat.student.kelas,
           nomorKursi: seatNumber,
           ruangan: assignment.roomName,

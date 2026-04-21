@@ -3,14 +3,15 @@
 import { useState } from 'react';
 import { useAppStore } from '@/store/useAppStore';
 import { generateAttendance } from '@/lib/excelExport';
-import { exportAttendance, exportSeatingByRoom } from '@/lib/excelExport';
+import { exportSeatingByRoom } from '@/lib/excelExport';
 import PDFExport from '@/components/PDFExport';
-import { Download, FileSpreadsheet, Users, FileText, Filter } from 'lucide-react';
+import { FileSpreadsheet, Users, FileText, Filter, Loader2 } from 'lucide-react';
 
 export default function AbsensiPage() {
   const { roomAssignments, students } = useAppStore();
   const [selectedRoom, setSelectedRoom] = useState<string>('all');
   const [selectedClass, setSelectedClass] = useState<string>('all');
+  const [isExporting, setIsExporting] = useState(false);
 
   const fullAttendance = generateAttendance(roomAssignments);
   
@@ -23,14 +24,56 @@ export default function AbsensiPage() {
     return true;
   });
 
-  const handleExportAttendance = () => {
+  const [isExportingDenah, setIsExportingDenah] = useState(false);
+
+  const handleExportAttendance = async () => {
     if (roomAssignments.length === 0) return;
-    exportAttendance(roomAssignments, selectedRoom, selectedClass);
+    setIsExporting(true);
+    try {
+      const res = await fetch('/api/export-absensi', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ assignments: roomAssignments }),
+      });
+      if (!res.ok) throw new Error('Gagal generate Excel');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'Absensi_Ujian.xlsx';
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      alert('Gagal membuat file Excel. Silakan coba lagi.');
+      console.error(err);
+    } finally {
+      setIsExporting(false);
+    }
   };
 
-  const handleExportSeating = () => {
+  const handleExportSeating = async () => {
     if (roomAssignments.length === 0) return;
-    exportSeatingByRoom(roomAssignments);
+    setIsExportingDenah(true);
+    try {
+      const res = await fetch('/api/export-denah', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ assignments: roomAssignments }),
+      });
+      if (!res.ok) throw new Error('Gagal generate Excel');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'Denah_Ujian.xlsx';
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      alert('Gagal membuat file Excel Denah. Silakan coba lagi.');
+      console.error(err);
+    } finally {
+      setIsExportingDenah(false);
+    }
   };
 
   return (
@@ -53,17 +96,23 @@ export default function AbsensiPage() {
             <div className="flex gap-2 w-full sm:w-auto flex-col sm:flex-row">
               <button
                 onClick={handleExportAttendance}
-                className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-white text-indigo-700 rounded-lg hover:bg-indigo-50 transition-colors font-semibold text-sm sm:text-base shadow-sm"
+                disabled={isExporting}
+                className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-white text-indigo-700 rounded-lg hover:bg-indigo-50 transition-colors font-semibold text-sm sm:text-base shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                <FileText className="w-4 h-4" />
-                <span className="sm:inline">Generate Absensi</span>
+                {isExporting
+                  ? <Loader2 className="w-4 h-4 animate-spin" />
+                  : <FileText className="w-4 h-4" />}
+                <span className="sm:inline">{isExporting ? 'Membuat...' : 'Generate Absensi'}</span>
               </button>
               <button
                 onClick={handleExportSeating}
-                className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-400 transition-colors font-semibold text-sm sm:text-base shadow-sm"
+                disabled={isExportingDenah}
+                className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-400 transition-colors font-semibold text-sm sm:text-base shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                <FileSpreadsheet className="w-4 h-4" />
-                <span className="sm:inline">Generate Denah</span>
+                {isExportingDenah
+                  ? <Loader2 className="w-4 h-4 animate-spin" />
+                  : <FileSpreadsheet className="w-4 h-4" />}
+                <span className="sm:inline">{isExportingDenah ? 'Membuat...' : 'Generate Denah'}</span>
               </button>
             </div>
           )}
@@ -131,28 +180,36 @@ export default function AbsensiPage() {
             </div>
 
             <div className="overflow-x-auto -mx-3 sm:mx-0 px-3 sm:px-0">
-              <table className="w-full min-w-[600px]">
+              <table className="w-full min-w-[800px]">
                 <thead className="bg-slate-50 border-b border-slate-200">
                   <tr>
-                    <th className="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-slate-700">No</th>
-                    <th className="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-slate-700">Nama</th>
-                    <th className="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-slate-700">Kelas</th>
-                    <th className="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-slate-700">No Kursi</th>
-                    <th className="px-3 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-slate-700">Ruangan</th>
+                    <th className="px-3 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-slate-700">No</th>
+                    <th className="px-3 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-slate-700">NIS</th>
+                    <th className="px-3 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-slate-700">NISN</th>
+                    <th className="px-3 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-slate-700">Nama</th>
+                    <th className="px-3 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-slate-700">Jenis Kelamin</th>
+                    <th className="px-3 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-slate-700">Agama</th>
+                    <th className="px-3 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-slate-700">Kelas</th>
+                    <th className="px-3 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-slate-700">No Kursi</th>
+                    <th className="px-3 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-slate-700">Ruangan</th>
                   </tr>
                 </thead>
                 <tbody>
                   {attendance.map((record) => (
                     <tr key={`${record.ruangan}-${record.nomorKursi}`} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                      <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-slate-600 font-medium">{record.nomor}</td>
-                      <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-slate-800 font-semibold whitespace-nowrap">{record.nama}</td>
-                      <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm">
+                      <td className="px-3 py-2 sm:py-3 text-xs sm:text-sm text-slate-600 font-medium">{record.nomor}</td>
+                      <td className="px-3 py-2 sm:py-3 text-xs sm:text-sm text-slate-500">{record.nis || '-'}</td>
+                      <td className="px-3 py-2 sm:py-3 text-xs sm:text-sm text-slate-500">{record.nisn || '-'}</td>
+                      <td className="px-3 py-2 sm:py-3 text-xs sm:text-sm text-slate-800 font-semibold whitespace-nowrap">{record.nama}</td>
+                      <td className="px-3 py-2 sm:py-3 text-xs sm:text-sm text-slate-600">{record.jenisKelamin || '-'}</td>
+                      <td className="px-3 py-2 sm:py-3 text-xs sm:text-sm text-slate-600">{record.agama || '-'}</td>
+                      <td className="px-3 py-2 sm:py-3 text-xs sm:text-sm">
                         <span className="bg-indigo-50 text-indigo-700 px-2 py-1 rounded text-xs font-semibold whitespace-nowrap">
                           {record.kelas}
                         </span>
                       </td>
-                      <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-slate-600">{record.nomorKursi}</td>
-                      <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-slate-600 whitespace-nowrap">{record.ruangan}</td>
+                      <td className="px-3 py-2 sm:py-3 text-xs sm:text-sm text-slate-600">{record.nomorKursi}</td>
+                      <td className="px-3 py-2 sm:py-3 text-xs sm:text-sm text-slate-600 whitespace-nowrap">{record.ruangan}</td>
                     </tr>
                   ))}
                 </tbody>
