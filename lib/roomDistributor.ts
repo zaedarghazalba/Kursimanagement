@@ -104,19 +104,18 @@ export const distributeStudentsToRooms = (
     const columns = options?.customColumns || calculateOptimalColumns(room.kapasitas);
     let rows = options?.customRows || Math.ceil(room.kapasitas / columns);
     
-    // Check how many students go into this room
+    // Check how many students go into this room (hard-limit to kapasitas)
     const studentsInThisRoom = Math.min(orderedStudents.length - studentIndex, room.kapasitas);
-    
-    // Ensure grid is large enough for students
+
+    // Ensure grid is large enough to hold all students for this room
     if (rows * columns < studentsInThisRoom) {
       rows = Math.ceil(studentsInThisRoom / columns);
     }
 
     const totalSeatsInGrid = rows * columns;
-    const maxSeats = Math.min(totalSeatsInGrid, room.kapasitas);
 
-    for (let i = 0; i < maxSeats; i++) {
-      if (studentIndex < orderedStudents.length) {
+    for (let i = 0; i < totalSeatsInGrid; i++) {
+      if (i < studentsInThisRoom && studentIndex < orderedStudents.length) {
         seats.push({
           seatId: uuidv4(),
           student: orderedStudents[studentIndex],
