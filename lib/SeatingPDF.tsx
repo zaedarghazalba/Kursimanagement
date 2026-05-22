@@ -235,27 +235,46 @@ const SeatingPDF = ({ assignments }: { assignments: RoomAssignment[] }) => {
                     const seatIndex = rowIndex * cols + colIndex;
                     const seat = assignment.seats[seatIndex];
 
-                    if (!seat) return null;
+                    const dynamicNo = seat
+                      ? seatToNumberMap.get(seat.seatId) || ''
+                      : '';
 
-                    const dynamicNo = seatToNumberMap.get(seat.seatId) || '';
+                    if (!seat) {
+                      return (
+                        <View key={colIndex} style={seatStyle.seatBoxEmpty}>
+                          <Text style={seatStyle.seatNumber}>#</Text>
+                          <Text style={seatStyle.emptyText}>Kosong</Text>
+                        </View>
+                      );
+                    }
 
-                    return seat.student ? (
-                      <View key={colIndex} style={seatStyle.seatBox}>
-                        <Text style={seatStyle.seatNumber}>#{dynamicNo}</Text>
-                        <Text style={seatStyle.studentName}>
-                          {seat.student.nama}
-                        </Text>
-                        <Text style={seatStyle.studentClass}>{seat.student.kelas}</Text>
-                      </View>
-                    ) : seat.type === 'pengawas' ? (
-                      <View key={colIndex} style={seatStyle.seatBoxPengawas}>
-                        <Text style={seatStyle.textPengawas}>Meja Pengawas</Text>
-                      </View>
-                    ) : seat.type === 'pintu' ? (
-                      <View key={colIndex} style={seatStyle.seatBoxPintu}>
-                        <Text style={seatStyle.textPintu}>Pintu Masuk / Keluar</Text>
-                      </View>
-                    ) : (
+                    if (seat.type === 'pengawas') {
+                      return (
+                        <View key={colIndex} style={seatStyle.seatBoxPengawas}>
+                          <Text style={seatStyle.textPengawas}>Meja Pengawas</Text>
+                        </View>
+                      );
+                    }
+                    if (seat.type === 'pintu') {
+                      return (
+                        <View key={colIndex} style={seatStyle.seatBoxPintu}>
+                          <Text style={seatStyle.textPintu}>Pintu Masuk / Keluar</Text>
+                        </View>
+                      );
+                    }
+                    if (seat.student) {
+                      return (
+                        <View key={colIndex} style={seatStyle.seatBox}>
+                          <Text style={seatStyle.seatNumber}>#{dynamicNo}</Text>
+                          <Text style={seatStyle.studentName}>
+                            {seat.student.nama}
+                          </Text>
+                          <Text style={seatStyle.studentClass}>{seat.student.kelas}</Text>
+                        </View>
+                      );
+                    }
+
+                    return (
                       <View key={colIndex} style={seatStyle.seatBoxEmpty}>
                         <Text style={seatStyle.seatNumber}>#{dynamicNo}</Text>
                         <Text style={seatStyle.emptyText}>Kosong</Text>
