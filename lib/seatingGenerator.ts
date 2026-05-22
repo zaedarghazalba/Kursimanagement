@@ -102,7 +102,7 @@ const placeWithConstraint = (
   rows: number,
   originalAssignment: RoomAssignment
 ): { success: boolean; assignment?: RoomAssignment } => {
-  const grid = new Array(rows * columns).fill(null) as (Student | null)[];
+  const grid = new Array(seats.length).fill(null) as (Student | null)[];
   const usedStudents = new Set<string>();
 
   // Get sorted classes by size (largest first for harder constraints)
@@ -207,7 +207,7 @@ const createBestEffort = (
   rows: number,
   originalAssignment: RoomAssignment
 ): RoomAssignment => {
-  const grid = new Array(rows * columns).fill(null) as (Student | null)[];
+  const grid = new Array(seats.length).fill(null) as (Student | null)[];
   const usedStudents = new Set<string>();
 
   // Sort by class size
